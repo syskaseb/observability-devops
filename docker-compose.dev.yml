@@ -1,0 +1,51 @@
+services:
+  eureka-server:
+    build:
+      context: ${HOME}/IdeaProjects/evaluation/discovery/discoveryServer
+    ports:
+      - "8761:8761"
+    volumes:
+      - maven-repo:/root/.m2/repository
+
+  eureka-client:
+    build:
+      context: ${HOME}/IdeaProjects/evaluation/discovery/discoveryClient
+    environment:
+      EUREKA_URI: http://eureka-server:8761/eureka
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MONGODB_HOST: ${MONGODB_HOST}
+      NEO4J_HOST: ${NEO4J_HOST}
+    depends_on:
+      - eureka-server
+      - postgres
+    deploy:
+      replicas: 3
+    volumes:
+      - maven-repo:/root/.m2/repository
+
+  feign-client:
+    build:
+      context: ${HOME}/IdeaProjects/evaluation/discovery/feign
+    environment:
+      EUREKA_URI: http://eureka-server:8761/eureka
+    depends_on:
+      - eureka-client
+    ports:
+      - "8079:8079"
+    volumes:
+      - maven-repo:/root/.m2/repository
+
+  api-gateway:
+    build:
+      context: ${HOME}/IdeaProjects/evaluation/discovery/apiGateway
+    environment:
+      EUREKA_URI: http://eureka-server:8761/eureka
+    depends_on:
+      - eureka-client
+    ports:
+      - "8077:8077"
+    volumes:
+      - maven-repo:/root/.m2/repository

@@ -5,6 +5,9 @@ services:
       - "8761:8761"
     volumes:
       - maven-repo:/root/.m2/repository
+    depends_on:
+      - broker
+      - otel-collector
 
   eureka-client:
     image: syskaseb/observability-discovery-client:latest
@@ -102,7 +105,7 @@ services:
       - zipkin-data:/data
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.96.0-arm64
+    image: otel/opentelemetry-collector-contrib:0.96.0
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
     command: [ "--config=/etc/otel-collector-config.yaml" ]
@@ -124,6 +127,8 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: false
+    depends_on:
+      - prometheus
     volumes:
       - grafana-data:/var/lib/grafana
     ports:
@@ -165,7 +170,6 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_JMX_PORT: 9101
       KAFKA_JMX_HOSTNAME: localhost
-      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker:29092
       CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
       CONFLUENT_METRICS_ENABLE: 'true'
@@ -173,26 +177,12 @@ services:
       - kafka-data:/var/lib/kafka/data
       - kafka-logs:/var/lib/kafka/logs
 
-  schema-registry:
-    image: confluentinc/cp-schema-registry:7.5.2
-    hostname: schema-registry
-    container_name: schema-registry
-    depends_on:
-      - broker
-    ports:
-      - "8081:8081"
-    environment:
-      SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
-      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
-
   control-center:
     image: confluentinc/cp-enterprise-control-center:7.5.2
     hostname: control-center
     container_name: control-center
     depends_on:
       - broker
-      - schema-registry
     ports:
       - "9021:9021"
     environment:
@@ -200,34 +190,20 @@ services:
       CONTROL_CENTER_CONNECT_CONNECT-DEFAULT_CLUSTER: 'connect:8083'
       CONTROL_CENTER_KSQL_KSQLDB1_URL: "http://ksqldb-server:8088"
       CONTROL_CENTER_KSQL_KSQLDB1_ADVERTISED_URL: "http://localhost:8088"
-      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       CONTROL_CENTER_REPLICATION_FACTOR: 1
       CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
       CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
       PORT: 9021
 
-  rest-proxy:
-    image: confluentinc/cp-kafka-rest:7.5.2
-    depends_on:
-      - broker
-      - schema-registry
-    ports:
-      - "8082:8082"
-    hostname: rest-proxy
-    container_name: rest-proxy
-    environment:
-      KAFKA_REST_HOST_NAME: rest-proxy
-      KAFKA_REST_BOOTSTRAP_SERVERS: 'broker:29092'
-      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
-      KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-
   logstash:
     image: docker.elastic.co/logstash/logstash:8.11.1
-    volumes:
-      - logstash-pipeline:/usr/share/logstash/pipeline
     environment:
       - ELASTIC_HOST=http://elasticsearch:9200
+    volumes:
+      - logstash-pipeline:/usr/share/logstash/pipeline
+    depends_on:
+      - elasticsearch
     command: >
       logstash -e '
         input {
@@ -255,8 +231,6 @@ services:
           }
         }
       '
-    depends_on:
-      - elasticsearch
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1

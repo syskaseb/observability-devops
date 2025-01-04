@@ -209,7 +209,7 @@ services:
         input {
           kafka {
             bootstrap_servers => "broker:29092"
-            topics => ["eureka-server-logs", "eureka-client-logs", "feign-client-logs"]
+            topics => ["eureka-server-logs", "eureka-client-logs", "feign-client-logs", "api-gateway-logs"]
             codec => json
           }
         }

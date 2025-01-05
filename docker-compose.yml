@@ -23,7 +23,7 @@ services:
       - eureka-server
       - postgres
     deploy:
-      replicas: 3
+      replicas: 2
     volumes:
       - maven-repo:/root/.m2/repository
 

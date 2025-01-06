@@ -19,6 +19,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       MONGODB_HOST: ${MONGODB_HOST}
       NEO4J_HOST: ${NEO4J_HOST}
+      REDIS_HOST: ${REDIS_HOST}
     depends_on:
       - eureka-server
       - postgres

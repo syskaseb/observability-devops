@@ -26,18 +26,6 @@ services:
     volumes:
       - maven-repo:/root/.m2/repository
 
-  feign-client:
-    build:
-      context: ${HOME}/IdeaProjects/evaluation/discovery/feign
-    environment:
-      EUREKA_URI: http://eureka-server:8761/eureka
-    depends_on:
-      - eureka-client
-    ports:
-      - "8079:8079"
-    volumes:
-      - maven-repo:/root/.m2/repository
-
   api-gateway:
     build:
       context: ${HOME}/IdeaProjects/evaluation/discovery/apiGateway

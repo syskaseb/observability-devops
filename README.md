@@ -7,13 +7,13 @@
 ```docker compose up -d```
 * go to docker desktop and check the running containers
 
-## Cross-platform images building
-### Create cross-platform builder
+## Multi-arch images building
+### Create multi-arch builder
 ```
 docker buildx create --name multiarch-builder --use
 docker buildx inspect --bootstrap
 ```
-### Build and push multi-arch image
+### Build and push the image
 ```
 docker buildx build --platform linux/amd64,linux/arm64 \
 -t syskaseb/<i.e. observability-discovery-client>:latest \

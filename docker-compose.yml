@@ -37,6 +37,16 @@ services:
     volumes:
       - maven-repo:/root/.m2/repository
 
+  observability-frontend:
+    image: syskaseb/observability-frontend:latest
+    ports:
+      - "80:80"
+    environment:
+      NODE_ENV: production
+      API_BASE_URL: http://api-gateway:8077
+      NEXT_PUBLIC_API_BASE: http://localhost:8077
+      NEXT_PUBLIC_API_TOKEN: ${NEXT_PUBLIC_API_TOKEN}
+
   postgres:
     image: postgres:15.5
     environment:
